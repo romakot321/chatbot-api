@@ -7,6 +7,7 @@ from app.schemas.chat import ChatGenerateSchema
 from app.schemas.user import UserSchema
 from app.services.chat import ChatService, ChatWorker
 from app.services.user import UserService, get_current_user
+from . import validate_api_token
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
@@ -56,6 +57,7 @@ async def _handle_connection(
 @router.post("", response_model=ChatSchema, status_code=201)
 async def create_chat(
         schema: ChatCreateSchema,
+        _=Depends(validate_api_token),
         user: UserSchema = Depends(get_current_user),
         service: ChatService = Depends()
 ):
@@ -66,6 +68,7 @@ async def create_chat(
 async def get_my_chats(
         user: UserSchema = Depends(get_current_user),
         service: ChatService = Depends()
+        _=Depends(validate_api_token),
 ):
     return await service.list_user_chats(user.id)
 
