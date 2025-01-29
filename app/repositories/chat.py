@@ -66,19 +66,18 @@ class ChatRepository:
         chat_id = self._generate_id()
         schema = RedisChatSchema(user_id=user_id, name=name)
         await self.conn.hmset(chat_id, schema.dump())
-        await self.conn.hmset(chat_id + "-" + str(user_id), schema.dump())
+        await self.conn.hmset(chat_id + "&" + str(user_id), schema.dump())
         return schema.model_dump() | {"id": chat_id}
 
     async def list_user_chats(self, user_id: int) -> list[dict]:
         chats = []
-        async for key in self.conn.scan_iter("*-" + str(user_id)):
+        async for key in self.conn.scan_iter("*&" + str(user_id)):
             schema = RedisChatSchema.validate(await self.conn.hgetall(key))
-            chats.append(schema.model_dump())
+            chats.append(schema.model_dump() | {"id": key.decode().split("&")[0]})
         return chats
 
     async def get(self, chat_id: str) -> dict | None:
         state = await self.conn.hgetall(chat_id)
-        print("Get redis", state)
         try:
             return RedisChatSchema.validate(state).model_dump()
         except ValueError:

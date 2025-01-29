@@ -3,7 +3,7 @@ import websockets
 import aiohttp
 import json
 
-base_address = "localhost:8000"
+base_address = "localhost:8032"
 
 
 async def authenticate_websocket(websocket, chat_id: str, token: str):

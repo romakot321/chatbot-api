@@ -5,12 +5,11 @@ import os
 from app.schemas.ai import AIMessageSchema
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-proxy_url = os.getenv("OPENAI_PROXY_URL", "http://127.0.0.1:2080")
 
 
 class AIRepository:
     def __init__(self):
-        self.client = openai.AsyncOpenAI(http_client=httpx.AsyncClient(proxy=proxy_url))
+        self.client = openai.AsyncOpenAI()
 
     async def generate(self, messages: list[AIMessageSchema]):
         print("history:", [msg.model_dump() for msg in messages])

@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./
+    container_name: chatbot_app
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    restart: always
+    networks:
+      global_network:
+      default:
+    ports:
+      - "8032:80"
+
+  redis:
+    image: redis:alpine
+    container_name: chatbot_redis
+    restart: always
+    networks:
+      default:
+
+  postgres:
+    image: postgres:latest
+    container_name: chatbot_db
+    restart: always
+    env_file:
+      - .env
+    networks:
+      default:
+
+networks:
+  global_network:
+    external: true
