@@ -1,4 +1,5 @@
 from fastapi import Depends, HTTPException
+from loguru import logger
 
 from app.schemas.chat import ChatCreateSchema, ChatSchema
 from app.schemas.chat import ChatGenerateSchema, ChatGenerateResponseSchema
@@ -11,10 +12,10 @@ _workers = []
 
 
 class ChatWorker:
-    def __init__(self, chat_id: str, ai_repository: ChatRepository, messages: list = None):
+    def __init__(self, chat_id: str, ai_repository: ChatRepository, messages: list[ChatGenerateSchema] = None):
         self.chat_id = chat_id
         self.ai_repository = ai_repository
-        self.messages: list[AIMessageSchema] = messages if messages else []
+        self.messages: list[AIMessageSchema] = [AIMessageSchema(**msg.model_dump()) for msg in messages] if messages else []
 
     def _add_message(self, text: str):
         self.messages.append(AIMessageSchema(content=text))
@@ -47,22 +48,25 @@ class ChatService:
 
     async def connect(self, chat_id: str, user: UserSchema) -> ChatWorker:
         global _workers
+        logger.debug("Try connect to " + chat_id)
         chat = await self.chat_repository.get(chat_id)
         if chat is None:
             raise HTTPException(404)
-        if chat.user_id != user.id:
+        if chat.get("user_id") != user.id:
             raise HTTPException(401)
 
         history = await self.chat_repository.get_history(chat_id)
-        worker = ChatWorker(chat_id=chat_id, ai_repository=ai_repository, messages=history)
+        worker = ChatWorker(chat_id=chat_id, ai_repository=self.ai_repository, messages=history)
         _workers.append(worker)
         return worker
 
     async def disconnect(self, chat_id: str):
+        logger.debug("Disconnect from " + chat_id)
         worker = [w for w in _workers if w.chat_id == chat_id]
         if not worker:
             return
         worker = worker[0]
 
         await self.chat_repository.save_history(chat_id, worker.list_messages())
+        logger.debug("History saved")
 

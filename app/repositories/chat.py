@@ -39,7 +39,7 @@ class RedisChatSchema(RedisModel):
     def validate(cls, state):
         if not isinstance(state, dict):
             raise ValueError()
-        return cls(user_id=int(state.get("user_id")), name=state.get("name"))
+        return cls(user_id=int(state.get("user_id") or state.get(b"user_id")), name=(state.get("name") or state.get(b"name")))
 
 
 class RedisChatMessageSchema(RedisModel):
@@ -49,7 +49,7 @@ class RedisChatMessageSchema(RedisModel):
     def validate(cls, state):
         if not isinstance(state, dict):
             raise ValueError()
-        return cls(text=state.get('text'))
+        return cls(text=(state.get('text') or state.get(b'text')))
 
 
 class ChatRepository:
@@ -78,6 +78,7 @@ class ChatRepository:
 
     async def get(self, chat_id: str) -> dict | None:
         state = await self.conn.hgetall(chat_id)
+        print("Get redis", state)
         try:
             return RedisChatSchema.validate(state).model_dump()
         except ValueError:

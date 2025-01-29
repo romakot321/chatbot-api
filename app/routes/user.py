@@ -2,12 +2,12 @@ from fastapi import Depends, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from app.services.user import UserService, get_current_user
-from app.schemas.user import UserLoginSchema, UserSchema
+from app.schemas.user import UserLoginSchema, UserSchema, TokenSchema
 
 router = APIRouter(prefix="/api/user", tags=["User"])
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenSchema)
 async def login(
         schema: UserLoginSchema = Depends(UserLoginSchema.as_form),
         service: UserService = Depends()
